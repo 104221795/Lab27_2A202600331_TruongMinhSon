@@ -133,7 +133,9 @@ class ReviewState(TypedDict, total=False):
     human_choice: HumanChoice | None
     human_feedback: str | None
     escalation_answers: dict[str, str] | None
+    require_final_approval: bool | None
 
     # Populated by commit / final nodes
     posted_comment_body: str | None
+    posted_comment_url: str | None
     final_action: str | None

@@ -312,3 +312,107 @@ rm hitl_audit.db
 ```bash
 sqlite3 hitl_audit.db "SELECT action, confidence, decision, reviewer_id FROM audit_events ORDER BY id;"
 ```
+
+---
+
+## Final submission deliverables
+
+This repository now contains the completed Day27 Track 3 HITL PR Review Agent implementation.
+
+### Completed required deliverables
+
+| Deliverable | Status | Files |
+|---|---:|---|
+| HITL PR review agent | Done | `exercises/exercise_1_confidence.py`, `exercises/exercise_2_hitl.py`, `exercises/exercise_3_escalation.py`, `exercises/exercise_4_audit.py` |
+| Confidence-based routing | Done | `common/schemas.py`, `exercises/exercise_1_confidence.py` |
+| Human approval with `interrupt()` | Done | `exercises/exercise_2_hitl.py`, `exercises/exercise_4_audit.py` |
+| Low-confidence escalation Q&A | Done | `exercises/exercise_3_escalation.py`, `exercises/exercise_4_audit.py` |
+| Structured audit trail | Done | `common/db.py`, `audit/schema.sql`, `audit/replay.py`, `exercises/exercise_4_audit.py` |
+| Durable LangGraph checkpointer | Done | `exercises/exercise_4_audit.py`, `app.py` |
+| Streamlit approval UI | Done | `app.py` |
+
+### Extra implementation notes
+
+- The final reusable graph lives in `exercises/exercise_4_audit.py`.
+- The Streamlit UI imports the Exercise 4 graph instead of duplicating graph logic.
+- SQLite is used for both the LangGraph checkpointer and the structured `audit_events` table.
+- `common/llm.py` supports both OpenRouter (`OPENROUTER_API_KEY`) and Gemini's OpenAI-compatible endpoint (`GEMINI_API_KEY`).
+- The LLM helper validates every analysis into `PRAnalysis` and handles provider quirks such as JSON wrapped with a `thought` prefix.
+- GitHub comment posting returns a comment URL, which the UI shows after a successful commit.
+
+### Demo commands
+
+Start the browser UI:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py
+```
+
+Then open:
+
+```text
+http://localhost:8501
+```
+
+Demo PRs:
+
+```text
+https://github.com/VinUni-AI20k/PR-Demo/pull/1
+https://github.com/VinUni-AI20k/PR-Demo/pull/2
+```
+
+Expected flows:
+
+- PR #1 should route to the human approval flow.
+- PR #2 should route to the escalation flow, ask reviewer questions, synthesize a refined review, then ask for final approval.
+
+Important: clicking **Approve** posts a public GitHub PR comment using the account tied to `GITHUB_TOKEN`. Use **Reject** while rehearsing if you do not want to post.
+
+### Audit replay commands
+
+List recent sessions:
+
+```powershell
+.\.venv\Scripts\python.exe -m audit.replay --list
+```
+
+Replay a specific session:
+
+```powershell
+.\.venv\Scripts\python.exe -m audit.replay --thread <thread_id>
+```
+
+### Exercise commands
+
+```powershell
+.\.venv\Scripts\python.exe exercises\exercise_1_confidence.py --pr https://github.com/VinUni-AI20k/PR-Demo/pull/1
+.\.venv\Scripts\python.exe exercises\exercise_2_hitl.py --pr https://github.com/VinUni-AI20k/PR-Demo/pull/1
+.\.venv\Scripts\python.exe exercises\exercise_3_escalation.py --pr https://github.com/VinUni-AI20k/PR-Demo/pull/2
+.\.venv\Scripts\python.exe exercises\exercise_4_audit.py --pr https://github.com/VinUni-AI20k/PR-Demo/pull/1
+```
+
+If `uv` is available on PATH, the equivalent lab-style commands are:
+
+```powershell
+uv run streamlit run app.py
+uv run python -m audit.replay --list
+```
+
+### Bonus coverage
+
+| Bonus | Status | Where |
+|---|---:|---|
+| Time-travel checkpoint visibility | Done | Streamlit sidebar uses `aget_state_history()` |
+| Resume from selected checkpoint | Done | Streamlit sidebar checkpoint selector |
+| Confidence calibration | Done | Streamlit sidebar metrics from `audit_events` |
+| Auto-edit on human `edit` choice | Done | `node_commit()` calls the LLM to rewrite the review before posting |
+| Multi-reviewer fan-out | Not implemented | Left as future work |
+
+### Verification performed
+
+- Python syntax compile for all touched files.
+- All LangGraph builders compile.
+- Mocked human approval flow passes.
+- Mocked escalation plus final approval flow passes.
+- Live LLM structured-output smoke test passes with the configured `.env` provider.
+- Streamlit app starts and responds at `http://localhost:8501`.

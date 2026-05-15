@@ -93,7 +93,7 @@ def fetch_pr(pr_url: str) -> PullRequest:
     )
 
 
-def post_review_comment(pr_url: str, body: str) -> None:
+def post_review_comment(pr_url: str, body: str) -> str | None:
     """Post a top-level discussion comment back to the PR.
 
     Uses the Issues endpoint (PRs are issues under the hood for top-level
@@ -107,3 +107,4 @@ def post_review_comment(pr_url: str, body: str) -> None:
     with httpx.Client(timeout=30.0) as client:
         resp = client.post(url, headers=_headers(), json={"body": body})
         resp.raise_for_status()
+        return resp.json().get("html_url")
